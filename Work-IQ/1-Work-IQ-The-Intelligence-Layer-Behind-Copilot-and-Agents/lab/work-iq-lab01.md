@@ -79,7 +79,7 @@ Content-Type: application/json
 {}
 ```
 
-- The response you get should look like the following one:
+- The response you get, should look like the following one:
 
 ```
 HTTP/1.1 201 Created

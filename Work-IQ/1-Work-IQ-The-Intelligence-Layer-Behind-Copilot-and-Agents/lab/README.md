@@ -9,6 +9,7 @@ This folder contains the hands-on cookbook for Episode 1 of The Work IQ Series.
 - **Node.js** 22 or later installed
 - **Python 3.10+** installed
 - **GitHub Copilot CLI** installed
+- **Work IQ** enabled in your target tenant
 - **Work IQ CLI** installed
 
 ## 🛠️ Installing GitHub Copilot CLI
@@ -109,6 +110,22 @@ export GITHUB_TOKEN=<your_token>
 
 For a comprehensive beginner's guide to using GitHub Copilot CLI, visit the [GitHub Copilot CLI for Beginners](https://github.com/github/copilot-cli-for-beginners/) repository.
 
+## ⚙️ Enabling Work IQ in your tenant
+
+Follow this brief enablement flow as a tenant admin:
+
+1. Verify Microsoft 365 Copilot licenses are available and assigned to users who need Work IQ.
+2. Sign in with an eligible admin role (for example, Global Administrator or Application Administrator).
+3. Grant tenant-wide admin consent using this URL:
+  `https://login.microsoftonline.com/{your-tenant-id}/adminconsent?client_id=ba081686-5d24-4bc6-a0d6-d034ecffed87`
+  Replace `{your-tenant-id}` with your tenant ID (GUID) or tenant domain, open it in a browser, sign in as admin, then click **Accept**.
+4. If the consent page returns access-denied/AADSTS errors, run the enablement script to provision missing service principals, then retry consent:
+  `https://github.com/microsoft/work-iq/blob/main/scripts/Enable-WorkIQToolsForTenant.ps1`
+5. Validate in Microsoft Entra admin center > Enterprise applications > Work IQ CLI > Permissions, and confirm all required permissions are granted for your organization.
+6. Optionally restrict access by setting Assignment required? to Yes and assigning only approved users/groups.
+
+For complete prerequisites, exact URLs/scripts, troubleshooting, and security guidance, see the full admin guide: https://github.com/microsoft/work-iq/blob/main/ADMIN-INSTRUCTIONS.md
+
 ## 🏗️ Installing Work IQ CLI
 
 Work IQ CLI can be installed in multiple ways depending on your setup. Choose the method that best fits your workflow:
@@ -202,7 +219,7 @@ Work IQ supports:
 
 For more information, see the [Work IQ CLI documentation](https://learn.microsoft.com/en-us/microsoft-365/copilot/extensibility/work-iq-cli).
 
-## 📓 Cookbook Notebook
+## 📓 Lab Instructions
 
 The [**Work IQ Lab for Episode 01**](./work-iq-lab01.md) walks you through the basic capabilities of Work IQ, step by step:
 
