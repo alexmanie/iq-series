@@ -405,88 +405,15 @@ resource userRole_storageBlobContributor 'Microsoft.Authorization/roleAssignment
 }
 
 // ===============================================
-// DATA SEEDING (Deployment Script)
-// Creates search index, uploads sample data,
-// knowledge source, and knowledge base so the
-// MCP endpoint is ready to use immediately
+// DATA SEEDING
 // ===============================================
-
-@description('Seed sample data and create knowledge base during deployment')
-param seedData bool = true
-
-resource seedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = if (seedData) {
-  name: '${resourcePrefix}-seed-${uniqueSuffix}'
-  location: location
-}
-
-// Grant the seed identity Search Service Contributor on the search service
-resource seedRole_searchContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (seedData) {
-  name: guid(resourceGroup().id, searchService.name, 'seed', roles.searchServiceContributor)
-  scope: searchService
-  properties: {
-    principalId: seedData ? seedIdentity.properties.principalId : ''
-    principalType: 'ServicePrincipal'
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roles.searchServiceContributor)
-  }
-}
-
-// Grant the seed identity Search Index Data Contributor on the search service
-resource seedRole_searchIndexContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (seedData) {
-  name: guid(resourceGroup().id, searchService.name, 'seed', roles.searchIndexDataContributor)
-  scope: searchService
-  properties: {
-    principalId: seedData ? seedIdentity.properties.principalId : ''
-    principalType: 'ServicePrincipal'
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roles.searchIndexDataContributor)
-  }
-}
-
-// Grant the seed identity Cognitive Services User on the OpenAI service
-// (required for knowledge base model validation)
-resource seedRole_cogServicesUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (seedData) {
-  name: guid(resourceGroup().id, openAiService.name, 'seed', roles.cognitiveServicesUser)
-  scope: openAiService
-  properties: {
-    principalId: seedData ? seedIdentity.properties.principalId : ''
-    principalType: 'ServicePrincipal'
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roles.cognitiveServicesUser)
-  }
-}
-
-resource seedDataScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = if (seedData) {
-  name: '${resourcePrefix}-seed-data'
-  location: location
-  kind: 'AzureCLI'
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${seedIdentity.id}': {}
-    }
-  }
-  properties: {
-    azCliVersion: '2.61.0'
-    retentionInterval: 'PT1H'
-    cleanupPreference: 'OnSuccess'
-    timeout: 'PT15M'
-    forceUpdateTag: uniqueSuffix
-    scriptContent: loadTextContent('scripts/seed-data.sh')
-    environmentVariables: [
-      { name: 'SEARCH_ENDPOINT', value: 'https://${searchService.name}.search.windows.net' }
-      { name: 'AOAI_ENDPOINT', value: openAiService.properties.endpoint }
-      { name: 'EMBEDDING_MODEL', value: embeddingModelName }
-      { name: 'EMBEDDING_DEPLOYMENT', value: names.embeddingDeployment }
-      { name: 'GPT_MODEL', value: chatModelName }
-      { name: 'GPT_DEPLOYMENT', value: names.chatDeployment }
-    ]
-  }
-  dependsOn: [
-    seedRole_searchContributor
-    seedRole_searchIndexContributor
-    seedRole_cogServicesUser
-    embeddingDeployment
-    chatDeployment
-  ]
-}
+// Sample data, the knowledge source, and the knowledge base are seeded as a
+// post-deployment step run by deploy.sh / deploy.ps1 (see infra/scripts/seed_data.py).
+// Seeding authenticates with the deploying user's Azure AD identity via
+// DefaultAzureCredential, so it requires no storage account keys and works in
+// tenants that block key-based access on storage accounts. The deploying user is
+// already granted Search Service Contributor and Search Index Data Contributor
+// below, which is everything the seed step needs.
 
 // ===============================================
 // OUTPUTS

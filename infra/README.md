@@ -11,14 +11,14 @@ Click the button above to deploy directly from the Azure Portal. You'll be promp
 - **Resource Prefix** — a short name prefix for all resources (default: `iqs`)
 - **Location** — Azure region (must support [agentic retrieval](https://learn.microsoft.com/azure/search/search-region-support))
 
-> **⚠️ Troubleshooting: Deployment script failed?**
+> **ℹ️ Sample data seeding**
 >
-> Some Azure tenants enforce policies that block key-based access on storage accounts. The data seeding step uses an [Azure deployment script](https://learn.microsoft.com/azure/azure-resource-manager/templates/deployment-script-template) resource which requires an internal storage account — this can fail under such policies. If this happens, **all core resources are deployed successfully** (AI Search, OpenAI, Foundry project, Blob Storage, RBAC); only the sample data and knowledge base setup is missing.
+> The one-click portal deployment provisions all core resources (AI Search, OpenAI, Foundry project, Blob Storage, RBAC). It does **not** seed the sample data and knowledge base, because that requires running code.
 >
-> You can seed the data manually using either of these alternatives:
+> Seeding uses **Azure AD / managed-identity authentication** (`DefaultAzureCredential`) and never uses storage account keys, so it works in tenants that enforce policies blocking key-based access on storage accounts. Seed the data using either:
 >
-> 1. **Run the Episode 1 cookbook**: Open the [Episode 1 cookbook](../Foundry-IQ/1-Foundry-IQ-Unlocking-Knowledge-for-Agents/cookbook/) and run it end-to-end — it indexes the same NASA "Earth at Night" data and creates the knowledge source and knowledge base.
-> 2. **Seed via Foundry IQ UI**: Create an index in AI Search manually using the [NASA Earth at Night dataset](https://raw.githubusercontent.com/Azure-Samples/azure-search-sample-data/main/nasa-e-book/earth-at-night-json/documents.json), then create a knowledge source and knowledge base pointing to it through the Foundry IQ portal.
+> 1. **Run `deploy.sh` / `deploy.ps1`** (see [Quick Start](#-quick-start) below) — these scripts deploy the infrastructure and then run `infra/scripts/seed_data.py` as a post-deployment step with your Azure AD identity.
+> 2. **Run the Episode 1 cookbook**: Open the [Episode 1 cookbook](../1-Foundry-IQ-Unlocking-Knowledge-for-Agents/cookbook/) and run it end-to-end — it indexes the same NASA "Earth at Night" data and creates the knowledge source and knowledge base.
 
 After deployment, copy the output values from the portal and create a `.env` file **inside each episode's `cookbook/` folder** (e.g., `1-Foundry-IQ-Unlocking-Knowledge-for-Agents/cookbook/.env`):
 
@@ -82,6 +82,7 @@ This will:
 - Create the resource group
 - Deploy all Azure resources via Bicep
 - Set up RBAC role assignments
+- Seed the sample data and knowledge base using your Azure AD identity (skip with `-n` / `-SkipSeed`)
 - Generate a `.env` file in the repo root with all endpoints
 
 ### 3. Run the Cookbooks
@@ -106,6 +107,8 @@ az group delete --name iq-series-rg --yes --no-wait
 | File | Description |
 |------|-------------|
 | `main.bicep` | Bicep template defining all Azure resources |
+| `azuredeploy.json` | ARM template generated from `main.bicep` (used by the Deploy to Azure button) |
 | `main.parameters.json` | Default parameter values |
-| `deploy.sh` | Deployment script for macOS/Linux |
-| `deploy.ps1` | Deployment script for Windows PowerShell |
+| `deploy.sh` | Deployment + data seeding script for macOS/Linux |
+| `deploy.ps1` | Deployment + data seeding script for Windows PowerShell |
+| `scripts/seed_data.py` | Seeds sample data, knowledge source, and knowledge base (Azure AD auth) |
