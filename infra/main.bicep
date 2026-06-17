@@ -335,6 +335,23 @@ resource searchToAIServices_CogServicesUser 'Microsoft.Authorization/roleAssignm
 }
 
 // ===============================================
+// FOUNDRY PROJECT ROLE ASSIGNMENTS
+// (Project managed identity → AI Search, for MCP authentication)
+// ===============================================
+
+// Search Index Data Reader — allows the project's managed identity to call
+// the Knowledge Base MCP endpoint (authType: ProjectManagedIdentity)
+resource projectToSearch_SearchIndexDataReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, searchService.name, project.name, roles.searchIndexDataReader)
+  scope: searchService
+  properties: {
+    principalId: project.identity.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roles.searchIndexDataReader)
+  }
+}
+
+// ===============================================
 // USER ROLE ASSIGNMENTS
 // ===============================================
 
