@@ -153,8 +153,8 @@ if [ "$SEED_DATA" = "true" ]; then
   python3 -m pip install --quiet --disable-pip-version-check \
     azure-search-documents==11.7.0b2 azure-identity requests
 
-  echo "  Waiting 60 seconds for RBAC role propagation..."
-  sleep 60
+  echo "  Waiting 90 seconds for RBAC role propagation..."
+  sleep 90
 
   echo "  Running seed script..."
   SEARCH_ENDPOINT="$SEARCH_ENDPOINT" \

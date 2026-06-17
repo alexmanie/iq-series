@@ -123,8 +123,8 @@ if (-not $SkipSeed) {
     python3 -m pip install --quiet --disable-pip-version-check `
         azure-search-documents==11.7.0b2 azure-identity requests
 
-    Write-Host "  Waiting 60 seconds for RBAC role propagation..."
-    Start-Sleep -Seconds 60
+    Write-Host "  Waiting 90 seconds for RBAC role propagation..."
+    Start-Sleep -Seconds 90
 
     Write-Host "  Running seed script..."
     $env:SEARCH_ENDPOINT = $searchEndpoint
