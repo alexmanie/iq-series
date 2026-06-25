@@ -11,7 +11,9 @@ param(
 
     [string]$ResourcePrefix = "iqs",
 
-    [string]$SearchSku = "standard"
+    [string]$SearchSku = "standard",
+
+    [switch]$SkipSeed
 )
 
 Write-Host "========================================"
@@ -110,6 +112,35 @@ AZURE_AI_SEARCH_CONNECTION_NAME=$searchConnectionName
 Set-Content -Path $envFile -Value $envContent
 Write-Host ""
 Write-Host "✓ .env file created at: $envFile"
+
+# Seed sample data and knowledge base (Azure AD / managed-identity auth — no storage keys)
+if (-not $SkipSeed) {
+    Write-Host ""
+    Write-Host "Seeding sample data and knowledge base..."
+    Write-Host "  (Uses your Azure AD identity — no storage account keys required)"
+
+    Write-Host "  Installing Python dependencies..."
+    python3 -m pip install --quiet --disable-pip-version-check `
+        azure-search-documents==11.7.0b2 azure-identity requests
+
+    Write-Host "  Waiting 90 seconds for RBAC role propagation..."
+    Start-Sleep -Seconds 90
+
+    Write-Host "  Running seed script..."
+    $env:SEARCH_ENDPOINT = $searchEndpoint
+    $env:AOAI_ENDPOINT = $aoaiEndpoint
+    $env:EMBEDDING_MODEL = "text-embedding-3-large"
+    $env:EMBEDDING_DEPLOYMENT = $embeddingDeployment
+    $env:GPT_MODEL = "gpt-4o-mini"
+    $env:GPT_DEPLOYMENT = $chatDeployment
+    python3 (Join-Path $scriptDir "scripts/seed_data.py")
+
+    Write-Host "✓ Sample data and knowledge base seeded"
+} else {
+    Write-Host ""
+    Write-Host "Skipping data seeding (-SkipSeed). Seed later by running:"
+    Write-Host "  python3 $(Join-Path $scriptDir 'scripts/seed_data.py')"
+}
 
 # Display summary
 Write-Host ""

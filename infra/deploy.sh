@@ -9,16 +9,18 @@ RESOURCE_GROUP=""
 LOCATION=""
 RESOURCE_PREFIX="iqs"
 SEARCH_SKU="standard"
+SEED_DATA="true"
 
 # Parse arguments
-while getopts "g:l:p:s:h" opt; do
+while getopts "g:l:p:s:nh" opt; do
   case $opt in
     g) RESOURCE_GROUP="$OPTARG" ;;
     l) LOCATION="$OPTARG" ;;
     p) RESOURCE_PREFIX="$OPTARG" ;;
     s) SEARCH_SKU="$OPTARG" ;;
+    n) SEED_DATA="false" ;;
     h)
-      echo "Usage: $0 -g <resource-group> -l <location> [-p <prefix>] [-s <search-sku>]"
+      echo "Usage: $0 -g <resource-group> -l <location> [-p <prefix>] [-s <search-sku>] [-n]"
       echo ""
       echo "Required:"
       echo "  -g  Resource group name"
@@ -27,6 +29,7 @@ while getopts "g:l:p:s:h" opt; do
       echo "Optional:"
       echo "  -p  Resource prefix (default: iqs)"
       echo "  -s  Search service SKU (default: standard)"
+      echo "  -n  Skip seeding sample data and knowledge base"
       echo "  -h  Show this help message"
       exit 0
       ;;
@@ -139,6 +142,35 @@ EOF
 
 echo ""
 echo "✓ .env file created at: $ENV_FILE"
+
+# Seed sample data and knowledge base (Azure AD / managed-identity auth — no storage keys)
+if [ "$SEED_DATA" = "true" ]; then
+  echo ""
+  echo "Seeding sample data and knowledge base..."
+  echo "  (Uses your Azure AD identity — no storage account keys required)"
+
+  echo "  Installing Python dependencies..."
+  python3 -m pip install --quiet --disable-pip-version-check \
+    azure-search-documents==11.7.0b2 azure-identity requests
+
+  echo "  Waiting 90 seconds for RBAC role propagation..."
+  sleep 90
+
+  echo "  Running seed script..."
+  SEARCH_ENDPOINT="$SEARCH_ENDPOINT" \
+  AOAI_ENDPOINT="$AOAI_ENDPOINT" \
+  EMBEDDING_MODEL="text-embedding-3-large" \
+  EMBEDDING_DEPLOYMENT="$EMBEDDING_DEPLOYMENT" \
+  GPT_MODEL="gpt-4o-mini" \
+  GPT_DEPLOYMENT="$CHAT_DEPLOYMENT" \
+    python3 "$SCRIPT_DIR/scripts/seed_data.py"
+
+  echo "✓ Sample data and knowledge base seeded"
+else
+  echo ""
+  echo "Skipping data seeding (-n). Seed later by running:"
+  echo "  python3 $SCRIPT_DIR/scripts/seed_data.py"
+fi
 
 # Display summary
 echo ""

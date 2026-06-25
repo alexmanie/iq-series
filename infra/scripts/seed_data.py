@@ -1,26 +1,44 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env python3
+"""Seed sample data and create the knowledge base for the IQ Series.
 
-echo "[1/4] Waiting 90 seconds for RBAC role propagation..."
-sleep 90
+This runs as a post-deployment step using Azure AD / managed identity
+authentication (``DefaultAzureCredential``) — it never uses storage account
+keys, so it works in tenants that block key-based access on storage accounts.
 
-echo "[2/4] Installing Python dependencies..."
-pip install --break-system-packages -q azure-search-documents==11.7.0b2 azure-identity requests
+Required environment variables:
+  SEARCH_ENDPOINT       https://<search>.search.windows.net
+  AOAI_ENDPOINT         Azure OpenAI endpoint
+  EMBEDDING_MODEL       Embedding model name
+  EMBEDDING_DEPLOYMENT  Embedding deployment name
+  GPT_MODEL             Chat model name
+  GPT_DEPLOYMENT        Chat deployment name
+"""
 
-echo "[3/4] Running data seed script..."
-python3 <<'PYTHON_SCRIPT'
-import os, json, requests
-from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
-from azure.search.documents.indexes import SearchIndexClient
+import os
+
+import requests
+from azure.identity import DefaultAzureCredential
 from azure.search.documents import SearchIndexingBufferedSender
+from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
-    SearchIndex, SearchField, VectorSearch, VectorSearchProfile,
-    HnswAlgorithmConfiguration, AzureOpenAIVectorizer,
-    AzureOpenAIVectorizerParameters, SemanticSearch,
-    SemanticConfiguration, SemanticPrioritizedFields, SemanticField,
-    SearchIndexKnowledgeSource, SearchIndexKnowledgeSourceParameters,
-    SearchIndexFieldReference, KnowledgeBase, KnowledgeBaseAzureOpenAIModel,
-    KnowledgeSourceReference, KnowledgeRetrievalOutputMode,
+    AzureOpenAIVectorizer,
+    AzureOpenAIVectorizerParameters,
+    HnswAlgorithmConfiguration,
+    KnowledgeBase,
+    KnowledgeBaseAzureOpenAIModel,
+    KnowledgeRetrievalOutputMode,
+    KnowledgeSourceReference,
+    SearchField,
+    SearchIndex,
+    SearchIndexFieldReference,
+    SearchIndexKnowledgeSource,
+    SearchIndexKnowledgeSourceParameters,
+    SemanticConfiguration,
+    SemanticField,
+    SemanticPrioritizedFields,
+    SemanticSearch,
+    VectorSearch,
+    VectorSearchProfile,
 )
 
 credential = DefaultAzureCredential()
@@ -124,6 +142,5 @@ knowledge_base = KnowledgeBase(
 index_client.create_or_update_knowledge_base(knowledge_base)
 print(f"[OK] Knowledge base '{KNOWLEDGE_BASE_NAME}' created")
 
-print(f"\n[4/4] Data seeding complete!")
+print("\n[Done] Data seeding complete!")
 print(f"MCP endpoint: {SEARCH_ENDPOINT}/knowledgebases/{KNOWLEDGE_BASE_NAME}/mcp")
-PYTHON_SCRIPT
