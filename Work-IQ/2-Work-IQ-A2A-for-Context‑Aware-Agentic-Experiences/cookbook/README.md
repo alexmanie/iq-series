@@ -101,17 +101,28 @@ For more details and troubleshooting, see the [A2A Inspector GitHub page](https:
 
 Follow this brief enablement flow as a tenant admin:
 
-1. Verify licensing requirements are satisfied for users who need Work IQ.
-1. Sign in with an eligible admin role (for example, Global Administrator or Application Administrator).
-1. Grant tenant-wide admin consent using this URL:
-  `https://login.microsoftonline.com/{your-tenant-id}/adminconsent?client_id=ba081686-5d24-4bc6-a0d6-d034ecffed87`
-  Replace `{your-tenant-id}` with your tenant ID (GUID) or tenant domain, open it in a browser, sign in as admin, then click **Accept**.
-1. If the consent page returns access-denied/AADSTS errors, run the enablement script to provision missing service principals, then retry consent:
-  `https://github.com/microsoft/work-iq/blob/main/scripts/Enable-WorkIQToolsForTenant.ps1`
-1. Validate in Microsoft Entra admin center > Enterprise applications > Work IQ CLI > Permissions, and confirm all required permissions are granted for your organization.
-1. Optionally restrict access by setting Assignment required? to Yes and assigning only approved users/groups.
+1. Verify licensing requirements are satisfied for users who need Work IQ. You can find additional details about the licensing model in the article [Understand usage-based billing and cost management for Copilot Credits](https://learn.microsoft.com/en-us/microsoft-365/copilot/usage-based-billing-overview-copilot-credits)
+1. Ensure you have a **Global Administrator** role in your organization.
+1. Create the Work IQ service principal in your organization using one of these methods:
 
-For complete prerequisites, exact URLs/scripts, troubleshooting, and security guidance, see the full admin guide: https://github.com/microsoft/work-iq/blob/main/ADMIN-INSTRUCTIONS.md
+   **Option A: Using Graph Explorer (Admin center)**
+   - Go to [Graph Explorer](https://aka.ms/ge) and sign in with an admin account.
+   - Set the method to **POST** and the URL to `https://graph.microsoft.com/v1.0/servicePrincipals`.
+   - Select **Modify permissions** and consent to `Application.ReadWrite.All`.
+   - Enter the following in the **Request body**:
+     ```json
+     {
+       "appId": "fdcc1f02-fc51-4226-8753-f668596af7f7"
+     }
+     ```
+   - Select **Run query**. A **201 Created** response confirms success.
+
+   **Option B: Using Azure CLI**
+   ```bash
+   az ad sp create --id fdcc1f02-fc51-4226-8753-f668596af7f7
+   ```
+
+Your tenant is now ready to use Work IQ. For complete prerequisites, detailed instructions, and troubleshooting, see the [full Work IQ enablement guide](https://learn.microsoft.com/en-us/microsoft-365/copilot/extensibility/work-iq/enable-work-iq).
 
 ## 🏗️ Installing Work IQ CLI
 
@@ -190,7 +201,7 @@ workiq accept-eula
 Before installing, ensure you have:
 
 - Node.js installed on your machine
-- A Microsoft 365 subscription with a Copilot license
+- A Microsoft 365 subscription with a Copilot license and Copilot Credits configured
 - Administrative consent for the Work IQ application in your Microsoft Entra tenant
 - GitHub Copilot CLI (optional, but recommended)
 
